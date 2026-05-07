@@ -1,0 +1,10 @@
+numpy
+cachetools
+requests
+fastapi
+httpx
+openai
+uvicorn
+dashscope
+cachetools
+requests
