@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT视频预览</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 95vw;
+            max-height: 95vh;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1100px;
+            }
+        }
+        @media (min-width: 1600px) {
+            .container {
+                max-width: 1400px;
+            }
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            min-height: 300px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        @media (max-height: 768px) {
+            .video-container {
+                height: 70vh;
+            }
+        }
+        @media (max-height: 480px) {
+            .video-container {
+                height: 60vh;
+            }
+        }
+        .slide-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slide-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .slide-placeholder {
+            color: #666;
+            font-size: 18px;
+            text-align: center;
+        }
+        .script-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            max-height: 80px;
+            overflow: auto;
+            z-index: 10;
+        }
+        .digital-human-container {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            z-index: 20;
+        }
+        .digital-human {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .digital-human iframe {
+            width: 100%;
+            height: 100%;
+        }
+        @media (max-width: 768px) {
+            .digital-human {
+                width: 150px;
+                height: 225px;
+            }
+            .video-container {
+                height: 60vh;
+            }
+            .container {
+                padding: 10px;
+            }
+            .controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .time-display {
+                min-width: 60px;
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .digital-human {
+                width: 120px;
+                height: 180px;
+            }
+            .video-container {
+                height: 50vh;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .script-overlay {
+                padding: 10px;
+                font-size: 12px;
+                max-height: 60px;
+            }
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        .time-display {
+            font-size: 14px;
+            color: #666;
+            min-width: 80px;
+            text-align: center;
+        }
+        .slide-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        .slide-number {
+            font-weight: bold;
+            color: #333;
+        }
+        .slide-title {
+            color: #666;
+            font-size: 14px;
+        }
+        .status {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 PPT视频预览</h1>
+            <p>自动同步播放PPT和讲解内容</p>
+        </div>
+
+        <div class="slide-info">
+            <span class="slide-number" id="slideNumber">第 1 / 1 页</span>
+            <span class="slide-title" id="slideTitle">准备就绪</span>
+        </div>
+
+        <div class="video-container">
+            <div class="slide-display" id="slideDisplay">
+                <div class="slide-placeholder" id="slidePlaceholder">正在加载...</div>
+                <img class="slide-image hidden" id="slideImage" src="" alt="幻灯片">
+            </div>
+            <div class="script-overlay" id="scriptOverlay">
+                <div id="scriptText">讲解内容将显示在这里...</div>
+            </div>
+            <div class="digital-human-container" id="digitalHumanContainer">
+                <div class="digital-human" id="digitalHuman" style="width: 200px; height: 300px;">
+                    <iframe src="http://localhost:8000/web/character.html?embed=1" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="prevBtn" onclick="prevSlide()">◀</button>
+            <button class="control-btn" id="playBtn" onclick="togglePlay()">▶</button>
+            <button class="control-btn" id="nextBtn" onclick="nextSlide()">▶</button>
+            <div class="progress-bar" id="progressBar" onclick="seek(event)">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+        </div>
+
+        <div class="status" id="status">就绪</div>
+    </div>
+
+    <script>
+        let slides = [];
+        let slideImages = [];
+        let generatedAudios = [];
+        let currentSlide = 0;
+        let isPlaying = false;
+        let currentAudio = null;
+        let totalDuration = 0;
+        let currentTime = 0;
+        let slideDurations = [];
+        let slideStartTime = 0;
+        let timer = null;
+
+        function resolveMediaUrl(path) {
+            if (!path) return '';
+            if (/^(https?:|blob:|data:)/i.test(path)) return path;
+            return `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
+        }
+
+        let currentNarrationUsesSpeech = false;
+        let currentSpeechUtterance = null;
+        let currentSpeechStartedAt = 0;
+        let currentSpeechElapsed = 0;
+
+        function shouldUseSpeechNarration(audioPath) {
+            return !audioPath || /\.wav($|\?)/i.test(audioPath);
+        }
+
+        function estimateSpeechDuration(text) {
+            const plainText = String(text || '').replace(/\s+/g, '');
+            return Math.max(3, Math.ceil(plainText.length / 4));
+        }
+
+        function stopSpeechNarration(resetElapsed = true) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            currentSpeechUtterance = null;
+            currentSpeechStartedAt = 0;
+            if (resetElapsed) {
+                currentSpeechElapsed = 0;
+            }
+        }
+
+        function pauseSpeechNarration() {
+            if (!currentNarrationUsesSpeech) return;
+            if (currentSpeechStartedAt) {
+                currentSpeechElapsed += (Date.now() - currentSpeechStartedAt) / 1000;
+            }
+            stopSpeechNarration(false);
+        }
+
+        function getSpeechVoice() {
+            if (!('speechSynthesis' in window)) return null;
+            const voices = window.speechSynthesis.getVoices() || [];
+            return voices.find(v => /^zh/i.test(v.lang)) || voices[0] || null;
+        }
+
+        function speakCurrentSlideText(onend) {
+            const text = slides[currentSlide]?.script || '';
+            if (!text || !('speechSynthesis' in window)) return false;
+
+            stopSpeechNarration();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1;
+            const voice = getSpeechVoice();
+            if (voice) utterance.voice = voice;
+            currentSpeechUtterance = utterance;
+            currentSpeechStartedAt = Date.now();
+            utterance.onend = () => {
+                currentSpeechStartedAt = 0;
+                currentSpeechElapsed = slideDurations[currentSlide] || estimateSpeechDuration(text);
+                currentSpeechUtterance = null;
+                if (typeof onend === 'function') onend();
+            };
+            utterance.onerror = () => {
+                currentSpeechStartedAt = 0;
+                currentSpeechUtterance = null;
+                document.getElementById('status').textContent = '璇煶鎾斁澶辫触';
+            };
+            window.speechSynthesis.speak(utterance);
+            return true;
+        }
+
+        // 检查URL参数是否有数据
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            if (dataParam) {
+                try {
+                    const data = JSON.parse(decodeURIComponent(dataParam));
+                    console.log('从URL参数获取数据:', data);
+                    if (data && data.slides) {
+                        slides = data.slides || [];
+                        slideImages = data.slideImages || [];
+                        generatedAudios = data.generatedAudios || [];
+                        initPreview();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('解析URL参数失败:', e);
+                }
+            }
+            return false;
+        }
+
+        window.addEventListener('message', function(event) {
+            console.log('接收到消息:', event.data);
+            if (event.data.type === 'init') {
+                const data = event.data.data;
+                console.log('初始化数据:', data);
+                if (data && data.slides) {
+                    slides = data.slides || [];
+                    slideImages = data.slideImages || [];
+                    generatedAudios = data.generatedAudios || [];
+                    initPreview();
+                } else {
+                    console.error('初始化数据无效:', data);
+                    document.getElementById('status').textContent = '初始化失败：数据无效';
+                    document.getElementById('scriptText').textContent = '无法接收PPT数据，请检查浏览器控制台错误';
+                }
+            }
+        });
+
+        // 页面加载时检查URL参数
+        window.onload = function() {
+            document.getElementById('status').textContent = '等待初始化...';
+            // 尝试从URL参数获取数据
+            if (!checkUrlParams()) {
+                // 如果URL参数没有数据，等待postMessage
+                console.log('等待通过postMessage传递数据...');
+            }
+            
+            // 启动数字人
+            setTimeout(() => {
+                startDigitalHuman();
+            }, 1000);
+        };
+        
+        // 启动数字人
+        function startDigitalHuman() {
+            const digitalHumanFrame = document.querySelector('#digitalHuman iframe');
+            if (digitalHumanFrame) {
+                try {
+                    digitalHumanFrame.contentWindow.postMessage({
+                        type: 'start'
+                    }, 'http://localhost:8000');
+                    console.log('启动数字人');
+                } catch (error) {
+                    console.error('启动数字人失败:', error);
+                }
+            }
+        }
+
+        // 5秒后检查是否有数据，如果没有则显示错误
+        setTimeout(function() {
+            if (slides.length === 0) {
+                console.warn('5秒后仍无数据，可能是消息传递失败');
+                document.getElementById('status').textContent = '等待数据超时';
+                document.getElementById('scriptText').textContent = '请先上传PPT并生成讲解内容，然后再点击视频预览';
+            }
+        }, 5000);
+
+        function initPreview() {
+            console.log('初始化预览，幻灯片数量:', slides.length);
+            if (slides.length === 0) {
+                document.getElementById('status').textContent = '没有PPT内容';
+                return;
+            }
+
+            calculateDurations().then(() => {
+                showSlide(0, { autoplay: false, seekOffset: 0 });
+                updateSlideInfo(0);
+                updateTimeDisplay();
+                document.getElementById('status').textContent = '就绪（点击播放）';
+            });
+        }
+
+        async function _getAudioDurationSeconds(audioUrl) {
+            return await new Promise((resolve) => {
+                const audio = new Audio(audioUrl);
+                audio.preload = 'metadata';
+                audio.onloadedmetadata = function() {
+                    const d = Number.isFinite(audio.duration) ? audio.duration : 3;
+                    resolve(Math.max(1, d));
+                };
+                audio.onerror = function() {
+                    resolve(3);
+                };
+            });
+        }
+
+        async function calculateDurations() {
+            slideDurations = [];
+            totalDuration = 0;
+
+            for (let index = 0; index < slides.length; index++) {
+                const audioPath = generatedAudios?.[index];
+                if (audioPath && !shouldUseSpeechNarration(audioPath)) {
+                    let audioUrl = audioPath;
+                    audioUrl = resolveMediaUrl(audioUrl);
+                    const duration = await _getAudioDurationSeconds(audioUrl);
+                    slideDurations.push(duration);
+                    totalDuration += duration;
+                } else {
+                    const duration = estimateSpeechDuration(slides[index]?.script);
+                    slideDurations.push(duration);
+                    totalDuration += duration;
+                }
+            }
+        }
+
+        function _sumBefore(index) {
+            let sum = 0;
+            for (let i = 0; i < index; i++) sum += (slideDurations[i] || 0);
+            return sum;
+        }
+
+        function _updateCurrentTimeFromAudio() {
+            const base = _sumBefore(currentSlide);
+            let t = currentAudio ? currentAudio.currentTime : 0;
+            if (currentNarrationUsesSpeech) {
+                t = currentSpeechElapsed;
+                if (currentSpeechStartedAt) {
+                    t += (Date.now() - currentSpeechStartedAt) / 1000;
+                }
+            }
+            currentTime = Math.min(totalDuration, base + t);
+        }
+
+        function _startTicker() {
+            _stopTicker();
+            timer = setInterval(() => {
+                if (!isPlaying) return;
+                _updateCurrentTimeFromAudio();
+                updateProgress();
+                updateTimeDisplay();
+            }, 200);
+        }
+
+        function _stopTicker() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        /* legacy showSlide disabled
+        function showSlide(index, opts = { autoplay: false, seekOffset: 0 }) {
+            if (index < 0 || index >= slides.length) return;
+
+            currentSlide = index;
+            const slide = slides[index];
+
+            console.log('显示幻灯片', index, slide);
+
+            const slideImage = document.getElementById('slideImage');
+            const slidePlaceholder = document.getElementById('slidePlaceholder');
+
+            if (slideImages && slideImages[index]) {
+                let imageUrl = slideImages[index];
+                // 确保URL是完整的
+                imageUrl = resolveMediaUrl(imageUrl);
+                console.log('加载图片:', imageUrl);
+                slideImage.src = imageUrl;
+                slideImage.onload = function() {
+                    console.log('图片加载成功');
+                    slideImage.classList.remove('hidden');
+                    slidePlaceholder.classList.add('hidden');
+                };
+                slideImage.onerror = function() {
+                    console.error('图片加载失败:', imageUrl);
+                    slideImage.classList.add('hidden');
+                    slidePlaceholder.classList.remove('hidden');
+                    slidePlaceholder.textContent = `第 ${slide.slide} 页：图片加载失败`;
+                };
+            } else if (currentNarrationUsesSpeech) {
+                if (opts && opts.autoplay) {
+                    playSlideAudio();
+                }
+            } else {
+                console.log('没有图片，显示占位符');
+                slideImage.classList.add('hidden');
+                slidePlaceholder.classList.remove('hidden');
+                slidePlaceholder.textContent = `第 ${slide.slide} 页：${slide.title || ''}`;
+            }
+
+            document.getElementById('scriptText').textContent = slide.script || '';
+            updateSlideInfo(index);
+
+            stopSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            const audioPath = generatedAudios && generatedAudios[index] ? generatedAudios[index] : '';
+            currentNarrationUsesSpeech = shouldUseSpeechNarration(audioPath);
+            currentSpeechElapsed = 0;
+            if (audioPath && !currentNarrationUsesSpeech) {
+                let audioUrl = audioPath;
+                // 确保URL是完整的
+                audioUrl = resolveMediaUrl(audioUrl);
+                console.log('加载音频:', audioUrl);
+                currentAudio = new Audio(audioUrl);
+                currentAudio.preload = 'auto';
+                currentAudio.onloadedmetadata = function() {
+                    console.log('音频加载成功，时长:', currentAudio.duration, '秒');
+                    if (opts && typeof opts.seekOffset === 'number') {
+                        try {
+                            currentAudio.currentTime = Math.max(0, Math.min(currentAudio.duration || 0, opts.seekOffset));
+                        } catch (_) {}
+                    }
+                    _updateCurrentTimeFromAudio();
+                    updateProgress();
+                    updateTimeDisplay();
+                    if (opts && opts.autoplay) {
+                        playSlideAudio();
+                    }
+                };
+                currentAudio.onerror = function() {
+                    console.error('音频加载失败:', audioUrl);
+                    document.getElementById('status').textContent = '音频加载失败';
+                };
+                currentAudio.onended = function() {
+                    console.log('音频播放结束');
+                    if (isPlaying && currentSlide < slides.length - 1) {
+                        showSlide(currentSlide + 1, { autoplay: true, seekOffset: 0 });
+                    } else {
+                        isPlaying = false;
+                        document.getElementById('playBtn').textContent = '▶';
+                        document.getElementById('status').textContent = '已完成';
+                        _stopTicker();
+                    }
+                };
+            } else {
+                console.log('没有音频文件');
+                document.getElementById('status').textContent = '无音频';
+            }
+        }
+
+        */
+        /* legacy block disabled
+        function playSlideAudio() {
+            if (currentNarrationUsesSpeech) {
+                const spoke = speakCurrentSlideText(() => {
+                    if (isPlaying && currentSlide < slides.length - 1) {
+                        showSlide(currentSlide + 1, { autoplay: true, seekOffset: 0 });
+                    } else {
+                        isPlaying = false;
+                        _stopTicker();
+                    }
+                });
+                if (!spoke) {
+                    document.getElementById('status').textContent = '褰撳墠椤垫病鏈夊彲鎾斁鐨勮瑙ｅ唴瀹?;
+                }
+                return;
+            }
+            if (currentAudio) {
+                if (currentAudio.readyState < 2) {
+                    currentAudio.addEventListener('canplay', () => playSlideAudio(), { once: true });
+                    currentAudio.load();
+                    return;
+                }
+                currentAudio.play().catch(err => {
+                    console.error('播放失败:', err);
+                    document.getElementById('status').textContent = '播放失败，请点击播放按钮重试';
+                });
+            }
+        }
+
+        */
+        function togglePlay() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function play() {
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸';
+            document.getElementById('status').textContent = '播放中';
+            playSlideAudio();
+            _startTicker();
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('playBtn').textContent = '▶';
+            document.getElementById('status').textContent = '已暂停';
+            pauseSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            _stopTicker();
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                pause();
+                showSlide(currentSlide - 1, { autoplay: false, seekOffset: 0 });
+                updateProgress();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                pause();
+                showSlide(currentSlide + 1, { autoplay: false, seekOffset: 0 });
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            if (!totalDuration) return;
+            const progress = (currentTime / totalDuration) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function updateTimeDisplay() {
+            const currentWhole = Math.floor(currentTime || 0);
+            const totalWhole = Math.floor(totalDuration || 0);
+            const currentMinutes = Math.floor(currentWhole / 60);
+            const currentSeconds = currentWhole % 60;
+            const totalMinutes = Math.floor(totalWhole / 60);
+            const totalSeconds = totalWhole % 60;
+            
+            const timeText = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+            document.getElementById('timeDisplay').textContent = timeText;
+        }
+
+        function updateSlideInfo(index) {
+            const slide = slides[index];
+            document.getElementById('slideNumber').textContent = `第 ${index + 1} / ${slides.length} 页`;
+            document.getElementById('slideTitle').textContent = slide.title || '无标题';
+        }
+
+        function seek(event) {
+            const progressBar = document.getElementById('progressBar');
+            const rect = progressBar.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const progress = clickX / rect.width;
+
+            const targetTime = progress * totalDuration;
+            let cumulativeTime = 0;
+            let targetSlide = 0;
+            for (let i = 0; i < slideDurations.length; i++) {
+                const d = slideDurations[i] || 0;
+                if (targetTime < cumulativeTime + d) {
+                    targetSlide = i;
+                    break;
+                }
+                cumulativeTime += d;
+            }
+            const offset = Math.max(0, targetTime - cumulativeTime);
+            showSlide(targetSlide, { autoplay: isPlaying, seekOffset: offset });
+        }
+
+        // 已经在前面定义了window.onload函数，这里不需要重复定义
+
+        function _finishPreviewPlayback() {
+            isPlaying = false;
+            stopSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            document.getElementById('playBtn').textContent = '>';
+            document.getElementById('status').textContent = 'Completed';
+            _stopTicker();
+        }
+
+        function showSlide(index, opts = { autoplay: false, seekOffset: 0 }) {
+            if (index < 0 || index >= slides.length) return;
+
+            currentSlide = index;
+            const slide = slides[index];
+            const slideImage = document.getElementById('slideImage');
+            const slidePlaceholder = document.getElementById('slidePlaceholder');
+
+            if (slideImages && slideImages[index]) {
+                const imageUrl = resolveMediaUrl(slideImages[index]);
+                slideImage.src = imageUrl;
+                slideImage.onload = function() {
+                    slideImage.classList.remove('hidden');
+                    slidePlaceholder.classList.add('hidden');
+                };
+                slideImage.onerror = function() {
+                    slideImage.classList.add('hidden');
+                    slidePlaceholder.classList.remove('hidden');
+                    slidePlaceholder.textContent = `Slide ${slide.slide}: image load failed`;
+                };
+            } else {
+                slideImage.classList.add('hidden');
+                slidePlaceholder.classList.remove('hidden');
+                slidePlaceholder.textContent = `Slide ${slide.slide}: ${slide.title || ''}`;
+            }
+
+            document.getElementById('scriptText').textContent = slide.script || '';
+            updateSlideInfo(index);
+
+            stopSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+
+            const audioPath = generatedAudios && generatedAudios[index] ? generatedAudios[index] : '';
+            currentNarrationUsesSpeech = shouldUseSpeechNarration(audioPath);
+            currentSpeechElapsed = 0;
+
+            if (audioPath && !currentNarrationUsesSpeech) {
+                const audioUrl = resolveMediaUrl(audioPath);
+                currentAudio = new Audio(audioUrl);
+                currentAudio.preload = 'auto';
+                currentAudio.onloadedmetadata = function() {
+                    if (opts && typeof opts.seekOffset === 'number') {
+                        try {
+                            currentAudio.currentTime = Math.max(0, Math.min(currentAudio.duration || 0, opts.seekOffset));
+                        } catch (_) {}
+                    }
+                    _updateCurrentTimeFromAudio();
+                    updateProgress();
+                    updateTimeDisplay();
+                    if (opts && opts.autoplay) {
+                        playSlideAudio();
+                    }
+                };
+                currentAudio.onerror = function() {
+                    currentNarrationUsesSpeech = true;
+                    currentAudio = null;
+                    if (opts && opts.autoplay) {
+                        playSlideAudio();
+                    }
+                };
+                currentAudio.onended = function() {
+                    if (isPlaying && currentSlide < slides.length - 1) {
+                        showSlide(currentSlide + 1, { autoplay: true, seekOffset: 0 });
+                    } else {
+                        _finishPreviewPlayback();
+                    }
+                };
+            } else if (opts && opts.autoplay) {
+                playSlideAudio();
+            }
+        }
+
+        function playSlideAudio() {
+            if (currentNarrationUsesSpeech) {
+                const spoke = speakCurrentSlideText(() => {
+                    if (isPlaying && currentSlide < slides.length - 1) {
+                        showSlide(currentSlide + 1, { autoplay: true, seekOffset: 0 });
+                    } else {
+                        _finishPreviewPlayback();
+                    }
+                });
+                if (!spoke) {
+                    document.getElementById('status').textContent = 'No narration';
+                }
+                return;
+            }
+
+            if (!currentAudio) {
+                document.getElementById('status').textContent = 'No audio';
+                return;
+            }
+            if (currentAudio.readyState < 2) {
+                currentAudio.addEventListener('canplay', () => playSlideAudio(), { once: true });
+                currentAudio.load();
+                return;
+            }
+            currentAudio.play().catch(() => {
+                currentNarrationUsesSpeech = true;
+                playSlideAudio();
+            });
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('playBtn').textContent = '>';
+            document.getElementById('status').textContent = 'Paused';
+            pauseSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            _stopTicker();
+        }
+
+        window.onbeforeunload = function() {
+            _stopTicker();
+            stopSpeechNarration();
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+        };
+
+        // 窗口大小变化时调整界面
+        window.addEventListener('resize', function() {
+            console.log('窗口大小变化');
+            // 可以在这里添加额外的调整逻辑
+        });
+    </script>
+</body>
+</html>
