@@ -1,0 +1,19 @@
+net start MySQL
+
+cd /d 桌面:\项目二（1）\项目二\code-scaffold\springboot
+mvn spring-boot:run
+
+cd /d 桌面:\项目二（1）\项目二\code-scaffold\vue
+npm install
+npm run serve
+
+cd /d 桌面:\项目二（1）\项目二\code-scaffold\affiliate-project\MatesX-new
+python -m venv .venv
+.\.venv\Scripts\activate
+python main.py
+
+cd /d 桌面:\项目二（1）\项目二\code-scaffold\affiliate-project\PPT_Video_Gen
+python -m venv .venv
+.\.venv\Scripts\activate
+python server.py
+

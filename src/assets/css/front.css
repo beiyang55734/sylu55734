@@ -1,0 +1,94 @@
+.front-header {
+    display: flex;
+    height: 60px;
+    line-height: 60px;
+    background: white;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.front-header-left {
+    width: 450px;
+    display: flex;
+    align-items: center;
+    padding-left: 100px;
+}
+
+.front-header-left img, .front-header-dropdown img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.front-header-left .title {
+    flex: 1;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.front-header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.front-header-right {
+    width: 100px;
+    padding-right: 20px;
+    text-align: right;
+    cursor: pointer;
+}
+
+.front-header-dropdown {
+    display: flex;
+    align-items: center;
+    justify-content: right;
+    margin-top: 10px;
+}
+
+.el-dropdown-menu {
+    width: 100px !important;
+    text-align: center !important;
+}
+
+/* ElementUI 样式覆盖 */
+.el-menu.el-menu--horizontal {
+    border: none !important;
+    height: 59px;
+}
+
+/* 顶部头部阴影 */
+.header {
+    box-shadow: 0 2px 4px rgba(0,0,0,.08); /* 添加轻微阴影，增强层次感 */
+}
+
+/* 导航菜单项 */
+.menu-item {
+    height: 60%;                /* 高度占父容器60% */
+    display: flex;              /* 弹性布局 */
+    align-items: center;        /* 垂直居中 */
+    margin-right: 30px;         /* 右侧间距30px */
+    font-size: 16px;            /* 字号16px */
+    cursor: pointer;            /* 手型光标 */
+}
+
+/* 菜单项悬停效果 */
+.menu-item:hover {
+    color: #409eff;             /* 悬停时文字变为金色 */
+    font-weight: bold;          /* 加粗显示 */
+}
+
+/* 菜单项激活状态 */
+.menu-item-active {
+    color: #409eff;             /* 激活时文字金色 */
+    font-weight: bold;          /* 加粗 */
+    border-bottom: 3px solid #409eff; /* 底部金色下划线 */
+}
+
+/* 右边按钮样式 */
+.front-header-right-button{
+    display: flex;                       /* 弹性布局 */
+    margin-top: 15px;                    /* 距离上边距15px */
+}
